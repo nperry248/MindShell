@@ -40,16 +40,27 @@ def main():
         should_run = Confirm.ask("[bold cyan]Execute this command?[/]")
 
         if should_run:
-            with console.status("[bold green]Running...[/]", spinner="dots"):
-                success, output = run_command(command)
-            
-            if success:
-                if output:
-                    console.print(Panel(output, title="[green]Success[/]", border_style="green"))
-                else:
-                    console.print("[green]Done (No Output).[/green]")
+            # Handle cd separately — subprocess can't change the parent process directory
+            if command.strip().startswith("cd "):
+                target = command.strip()[3:].strip()
+                try:
+                    os.chdir(os.path.expanduser(target))
+                    console.print(f"[green]Now in:[/green] {os.getcwd()}")
+                except FileNotFoundError:
+                    console.print(f"[red]Directory not found:[/red] {target}")
+                except Exception as e:
+                    console.print(f"[red]Error:[/red] {e}")
             else:
-                console.print(Panel(output, title="[bold red]Error[/]", border_style="red"))
+                with console.status("[bold green]Running...[/]", spinner="dots"):
+                    success, output = run_command(command)
+
+                if success:
+                    if output:
+                        console.print(Panel(output, title="[green]Success[/]", border_style="green"))
+                    else:
+                        console.print("[green]Done (No Output).[/green]")
+                else:
+                    console.print(Panel(output, title="[bold red]Error[/]", border_style="red"))
         else:
             console.print("[dim]Command cancelled.[/dim]")
 
